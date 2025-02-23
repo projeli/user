@@ -1,25 +1,28 @@
+using System.Reflection;
+using UserService.Application.Profiles;
+using UserService.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddUserServiceCors(builder.Configuration, builder.Environment);
+builder.Services.AddUserServiceSwagger();
+builder.Services.AddUserServiceServices();
+builder.Services.AddUserServiceRepositories();
+builder.Services.AddControllers().AddUserServiceJson();
+builder.Services.AddUserServiceAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(UserProfile)));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
+app.MapControllers();
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+if (app.Environment.IsDevelopment())
+{
+    app.UseUserServiceSwagger();
+}
 
-app.MapControllers();
+app.UseUserServiceCors();
+app.UseUserServiceAuthentication();
 
 app.Run();
