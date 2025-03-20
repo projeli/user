@@ -29,6 +29,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: UserService.Api
+          context: .
+          file: UserService.Api/Dockerfile
           push: true
           tags: daqem/projeli:user
