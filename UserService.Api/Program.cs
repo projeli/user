@@ -1,4 +1,5 @@
 using System.Reflection;
+using Projeli.WikiService.Api.Extensions;
 using UserService.Application.Profiles;
 using UserService.Extensions;
 
@@ -11,6 +12,7 @@ builder.Services.AddUserServiceRepositories();
 builder.Services.AddControllers().AddUserServiceJson();
 builder.Services.AddUserServiceAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(UserProfile)));
+builder.Services.AddUserServiceOpenTelemetry(builder.Logging, builder.Configuration);
 
 var app = builder.Build();
 
@@ -24,5 +26,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseUserServiceCors();
 app.UseUserServiceAuthentication();
+app.UseUserServiceOpenTelemetry();
 
 app.Run();
