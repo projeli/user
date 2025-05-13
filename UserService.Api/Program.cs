@@ -13,6 +13,7 @@ builder.Services.AddControllers().AddUserServiceJson();
 builder.Services.AddUserServiceAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddAutoMapper(Assembly.GetAssembly(typeof(UserProfile)));
 builder.Services.AddUserServiceOpenTelemetry(builder.Logging, builder.Configuration);
+builder.Services.AddUserServiceCache(builder.Configuration);
 
 var app = builder.Build();
 
