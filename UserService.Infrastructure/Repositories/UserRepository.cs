@@ -29,8 +29,7 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
         foreach (var id in ids)
         {
             var cacheKey = $"user_{id}";
-            string? cachedData = null!;
-            // var cachedData = await cache.GetStringAsync(cacheKey);
+            var cachedData = await cache.GetStringAsync(cacheKey);
 
             if (cachedData != null)
             {
@@ -53,8 +52,8 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
                 UserId = usersToFetch,
             };
 
-            // try
-            // {
+            try
+            {
                 var users = await clerkBackendApi.Users.ListAsync(request);
 
                 if (users.UserList != null)
@@ -84,11 +83,11 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
                     }
                 }
             }
-            // catch (Exception ex) when (ex is ClerkErrors or SDKError)
-            // {
-            //     return null;
-            // }
-        // }
+            catch (Exception ex) when (ex is ClerkErrors or SDKError)
+            {
+                return null;
+            }
+        }
 
         return result;
     }
