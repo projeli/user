@@ -53,8 +53,8 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
                 UserId = usersToFetch,
             };
 
-            try
-            {
+            // try
+            // {
                 var users = await clerkBackendApi.Users.ListAsync(request);
 
                 if (users.UserList != null)
@@ -84,11 +84,11 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
                     }
                 }
             }
-            catch (Exception ex) when (ex is ClerkErrors or SDKError)
-            {
-                return null;
-            }
-        }
+            // catch (Exception ex) when (ex is ClerkErrors or SDKError)
+            // {
+            //     return null;
+            // }
+        // }
 
         return result;
     }
