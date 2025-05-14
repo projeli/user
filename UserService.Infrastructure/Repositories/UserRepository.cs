@@ -29,7 +29,8 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
         foreach (var id in ids)
         {
             var cacheKey = $"user_{id}";
-            var cachedData = await cache.GetStringAsync(cacheKey);
+            string? cachedData = null!;
+            // var cachedData = await cache.GetStringAsync(cacheKey);
 
             if (cachedData != null)
             {
