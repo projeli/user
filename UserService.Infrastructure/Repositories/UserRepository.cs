@@ -15,7 +15,7 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
     };
 
-    public async Task<List<ProjeliUser>?> GetByIds(List<string> ids)
+    public async Task<List<ProjeliUser>> GetByIds(List<string> ids)
     {
         if (ids.Count == 0)
         {
@@ -85,11 +85,60 @@ public class UserRepository(IClerkBackendApi clerkBackendApi, IDistributedCache 
             }
             catch (Exception ex) when (ex is ClerkErrors or SDKError)
             {
-                return null;
+                return [];
             }
         }
 
         return result;
+    }
+
+    public async Task<List<ProjeliUser>> SearchByUsername(string username)
+    {
+        var cacheKey = $"username_search_{username.ToLower()}";
+        var cachedData = await cache.GetStringAsync(cacheKey);
+
+        if (cachedData != null)
+        {
+            return JsonSerializer.Deserialize<List<ProjeliUser>>(cachedData) ?? [];
+        }
+
+        var request = new GetUserListRequest
+        {
+            UsernameQuery = username,
+            Limit = 5
+        };
+
+        try
+        {
+            var users = await clerkBackendApi.Users.ListAsync(request);
+
+            if (users.UserList == null)
+            {
+                return [];
+            }
+
+            var result = users.UserList.Select(user => new ProjeliUser
+            {
+                Id = user.Id!,
+                UserName = user.Username!,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.EmailAddresses?.FirstOrDefault(y => y.Id?.Equals(user.PrimaryEmailAddressId) ?? false)
+                    ?.EmailAddressValue,
+                ImageUrl = user.ImageUrl
+            }).ToList();
+
+            await cache.SetStringAsync(
+                cacheKey,
+                JsonSerializer.Serialize(result),
+                _cacheOptions);
+
+            return result;
+        }
+        catch (Exception ex) when (ex is ClerkErrors or SDKError)
+        {
+            return [];
+        }
     }
 
     public async Task<ProjeliUser?> GetById(string id)

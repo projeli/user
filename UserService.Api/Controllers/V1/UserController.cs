@@ -8,12 +8,32 @@ namespace UserService.Controllers.V1;
 public class UserController(IUserService userService) : BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> GetByIds(
-        [FromQuery] List<string> ids
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] List<string>? ids = null,
+        [FromQuery] string? username = null
     )
     {
-        var usersResult = await userService.GetByIds(ids);
-        return HandleResult(usersResult);
+        if (ids is { Count: > 0 })
+        {
+            var usersResult = await userService.GetByIds(ids);
+            return HandleResult(usersResult);
+        }
+
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            var searchResult = await userService.SearchByUsername(username);
+            return HandleResult(searchResult);
+        }
+
+        return ValidationProblem(new ValidationProblemDetails
+            {
+                Errors = new Dictionary<string, string[]>
+                {
+                    { "ids", ["ids cannot be empty"] },
+                    { "username", ["username cannot be empty"] }
+                }
+            }
+        );
     }
 
     [HttpGet("{id}")]
