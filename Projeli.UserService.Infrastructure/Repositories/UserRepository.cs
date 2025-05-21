@@ -1,13 +1,13 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Projeli.Shared.Infrastructure.Messaging.Events;
+using Projeli.Shared.Application.Messages.Users;
 using Projeli.UserService.Infrastructure.Database;
 using Projeli.UserService.Domain.Models;
 using Projeli.UserService.Domain.Repositories;
 
 namespace Projeli.UserService.Infrastructure.Repositories;
 
-public class UserRepository(UserServiceDbContext database, IBus bus) : IUserRepository
+public class UserRepository(UserServiceDbContext database) : IUserRepository
 {
     public async Task<List<User>> GetByIds(List<string> ids)
     {
@@ -110,22 +110,10 @@ public class UserRepository(UserServiceDbContext database, IBus bus) : IUserRepo
             .Where(user => user.UserId == id)
             .FirstOrDefaultAsync();
 
-        if (user is null)
-        {
-            return false;
-        }
+        if (user is null) return false;
 
         database.Users.Remove(user);
-        var result = await database.SaveChangesAsync();
-
-        if (result > 0)
-        {
-            await bus.Publish(new UserDeletedEvent
-            {
-                UserId = id
-            });
-        }
         
-        return true;
+        return await database.SaveChangesAsync() > 0;
     }
 }

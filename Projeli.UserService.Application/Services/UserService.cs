@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Projeli.Shared.Application.Messages.Users;
 using Projeli.Shared.Domain.Results;
 using Projeli.UserService.Application.Dtos;
 using Projeli.UserService.Domain.Models;
@@ -6,7 +7,7 @@ using Projeli.UserService.Domain.Repositories;
 
 namespace Projeli.UserService.Application.Services;
 
-public class UserService(IUserRepository repository, IMapper mapper) : IUserService
+public class UserService(IUserRepository repository, IBusRepository busRepository, IMapper mapper) : IUserService
 {
     public async Task<IResult<List<UserDto>>> GetByIds(List<string> ids)
     {
@@ -37,9 +38,11 @@ public class UserService(IUserRepository repository, IMapper mapper) : IUserServ
         user.Id = Ulid.NewUlid();
 
         var newUser = mapper.Map<User>(user);
-        await repository.Create(newUser);
+        newUser = await repository.Create(newUser);
 
-        return new Result<UserDto?>(mapper.Map<UserDto?>(newUser));
+        return newUser is not null
+            ? new Result<UserDto?>(mapper.Map<UserDto?>(newUser))
+            : Result<UserDto?>.Fail("Failed to create user.");
     }
 
     public async Task<IResult<UserDto?>> Update(string id, UserDto user)
@@ -50,10 +53,17 @@ public class UserService(IUserRepository repository, IMapper mapper) : IUserServ
             return Result<UserDto?>.NotFound();
         }
 
-        var updatedUser = mapper.Map(user, existingUser);
-        await repository.Update(id, updatedUser);
+        existingUser.UserName = user.UserName;
+        existingUser.Email = user.Email ?? existingUser.Email;
+        existingUser.FirstName = user.FirstName;
+        existingUser.LastName = user.LastName;
+        existingUser.ImageUrl = user.ImageUrl;
 
-        return new Result<UserDto?>(mapper.Map<UserDto?>(updatedUser));
+        var updatedUser = await repository.Update(id, existingUser);
+        
+        return updatedUser is not null
+            ? new Result<UserDto?>(mapper.Map<UserDto?>(updatedUser))
+            : Result<UserDto?>.Fail("Failed to update user.");
     }
 
     public async Task<IResult<UserDto?>> Delete(string id)
@@ -64,8 +74,18 @@ public class UserService(IUserRepository repository, IMapper mapper) : IUserServ
             return Result<UserDto?>.NotFound();
         }
 
-        await repository.Delete(id);
+        var success = await repository.Delete(id);
 
-        return new Result<UserDto?>(mapper.Map<UserDto?>(existingUser));
+        if (success)
+        {
+            await busRepository.Publish(new UserDeletedMessage
+            {
+                UserId = id
+            });
+        }
+        
+        return success
+            ? new Result<UserDto?>(mapper.Map<UserDto?>(existingUser))
+            : Result<UserDto?>.Fail("Failed to delete user.");
     }
 }

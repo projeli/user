@@ -1,6 +1,6 @@
 ﻿using MassTransit;
+using Projeli.Shared.Application.Messages.Users;
 using Projeli.Shared.Infrastructure.Exceptions;
-using Projeli.Shared.Infrastructure.Messaging.Events;
 
 namespace Projeli.UserService.Api.Extensions;
 
@@ -18,7 +18,7 @@ public static class RabbitMqExtension
                     h.Password(configuration["RabbitMq:Password"] ?? throw new MissingEnvironmentVariableException("RabbitMq:Password"));
                 });
                 
-                config.PublishFanOut<UserDeletedEvent>();
+                config.PublishFanOut<UserDeletedMessage>();
             });
         });
     }
