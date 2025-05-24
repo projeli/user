@@ -50,7 +50,8 @@ public class UserService(IUserRepository repository, IBusRepository busRepositor
         var existingUser = await repository.GetById(id);
         if (existingUser is null)
         {
-            return Result<UserDto?>.NotFound();
+            user.UserId = id;
+            return await Create(user);
         }
 
         existingUser.UserName = user.UserName;
